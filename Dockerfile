@@ -1,6 +1,7 @@
 FROM alpine AS builder
 ARG VERSION="1.0"
 WORKDIR /app
+
 RUN echo '#!/bin/sh' > generate_html.sh && \
     echo 'echo "<!DOCTYPE html><html><head><meta charset=\"UTF-8\"><title>Sprawozdanie Lab 5</title></head><body>" > /usr/share/nginx/html/index.html' >> generate_html.sh && \
     echo 'echo "<h1>Informacje o srodowisku uruchomieniowym</h1>" >> /usr/share/nginx/html/index.html' >> generate_html.sh && \
@@ -13,7 +14,11 @@ RUN echo '#!/bin/sh' > generate_html.sh && \
 FROM nginx:alpine
 RUN apk add --update curl && \
     rm -rf /var/cache/apk/*
-COPY --from=builder /app/generate_html.sh /docker-entrypoint.d/99-generate_html.sh
+
+COPY --from=builder /app/generate_html.sh /app/generate_html.sh
+
+CMD ["/bin/sh", "-c", "/app/generate_html.sh && nginx -g 'daemon off;'"]
+
 HEALTHCHECK --interval=10s --timeout=3s \
     CMD curl -f http://localhost/ || exit 1
 
