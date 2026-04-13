@@ -1,25 +1,27 @@
+# Budowanie
 FROM alpine AS builder
-ARG VERSION="1.0"
+# Deklaracja argumentu, który przyjmujemy z komendy docker build --build-arg
+ARG VERSION
+# Ustawienie katalogu roboczego
 WORKDIR /app
+# Skopiowanie kodu źródłowego skryptu JS do etapu budowania
+COPY skrypt.js .
 
-RUN echo '#!/bin/sh' > generate_html.sh && \
-    echo 'echo "<!DOCTYPE html><html><head><meta charset=\"UTF-8\"><title>Sprawozdanie Lab 5</title></head><body>" > /usr/share/nginx/html/index.html' >> generate_html.sh && \
-    echo 'echo "<h1>Informacje o srodowisku uruchomieniowym</h1>" >> /usr/share/nginx/html/index.html' >> generate_html.sh && \
-    echo 'echo "<p><strong>Wersja aplikacji:</strong> '${VERSION}'</p>" >> /usr/share/nginx/html/index.html' >> generate_html.sh && \
-    echo 'echo "<p><strong>Nazwa serwera (hostname):</strong> $(hostname)</p>" >> /usr/share/nginx/html/index.html' >> generate_html.sh && \
-    echo 'echo "<p><strong>Adres IP serwera:</strong> $(hostname -i)</p>" >> /usr/share/nginx/html/index.html' >> generate_html.sh && \
-    echo 'echo "</body></html>" >> /usr/share/nginx/html/index.html' >> generate_html.sh && \
-    chmod +x generate_html.sh
-
+# Serwer Nginx
 FROM nginx:alpine
-RUN apk add --update curl && \
+# Ponowna deklaracja ARG, aby wartość była widoczna w tym etapie
+ARG VERSION
+# Przypisanie wartości ARG do zmiennej, którą odczyta skrypt
+ENV APP_VERSION=${VERSION}
+# Instalacja Node.js i curl, czyszczenie cache
+RUN apk add --update curl nodejs && \
     rm -rf /var/cache/apk/*
-
-COPY --from=builder /app/generate_html.sh /app/generate_html.sh
-
-CMD ["/bin/sh", "-c", "/app/generate_html.sh && nginx -g 'daemon off;'"]
-
+# Kopiowanie gotowego skryptu z pierwszego etapu
+COPY --from=builder /app/skrypt.js /app/skrypt.js
+# Generowanie HTML przez JS tuż przed startem Nginxa
+CMD ["/bin/sh", "-c", "node /app/skrypt.js && nginx -g 'daemon off;'"]
+# Sprawdzanie co 10s, czy serwer odpowiada
 HEALTHCHECK --interval=10s --timeout=3s \
     CMD curl -f http://localhost/ || exit 1
-
+# Informacja o porcie, na którym pracuje kontener
 EXPOSE 80
