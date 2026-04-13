@@ -10,6 +10,7 @@ docker build --build-arg VERSION=3.0 -t lab5:v1 .
 docker run -d -p 8080:80 --name lab5 --hostname laboratorium5 lab5:v1
 ```
 <img width="945" height="48" alt="image" src="https://github.com/user-attachments/assets/8fc22dd8-9201-4390-8d3f-d84ccb5eb46c" />
+
 ```
 docker run -d -p 8081:80 --name lab5-2 --hostname laboratorium5-2 lab5:v1
 ```
